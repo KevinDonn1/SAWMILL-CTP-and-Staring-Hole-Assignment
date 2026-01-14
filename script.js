@@ -32,12 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let html = '';
         for (let g = 1; g <= groupStarts.length; g++) {
-            const takeOut = (bringOut[g] || []).sort((a, b) => a - b).join(', ') || 'None';
-            const pick = (pickUp[g] || []).sort((a, b) => a - b).join(', ') || 'None';
+            // Sort holes ascending before displaying
+            const takeOutSorted = (bringOut[g] || []).sort((a, b) => a - b).join(', ') || 'None';
+            const pickUpSorted   = (pickUp[g]   || []).sort((a, b) => a - b).join(', ') || 'None';
+
             html += `
                 <h4>Group ${g} (starts on hole ${groupStarts[g-1]})</h4>
-                <p>Take out CTP flags: ${takeOut}</p>
-                <p>Pick Up: ${pick}</p>
+                <p>Take out CTP flags: ${takeOutSorted}</p>
+                <p>Pick Up: ${pickUpSorted}</p>
             `;
         }
         ctpFlagsDiv.innerHTML = html;
