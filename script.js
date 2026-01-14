@@ -7,13 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctpFlagsDiv = document.getElementById('ctp-flags');
     const totalHoles = 24;
 
-    // Your preferred starting holes (TD prefers 21 first)
-    const preferredHoles = [21, 1, 12, 23, 19, 10, 11, 13];
+    // Your preferred starting hole order (TD always 21 first)
+    const preferredOrder = [21, 1, 12, 23, 19, 10, 11, 13];
 
-    // Minimum separation: 2 means at least 1 hole gap
-    const MIN_SEPARATION = 2;
+    // Minimum hole separation between starting positions (1 = at least one hole gap)
+    const MIN_SEPARATION = 2;  // Change to 3 if you want even more space
 
-    // Generate starting holes with enforced separation
+    // Generate starting holes following your preferred order + separation rule
     generateStartsBtn.addEventListener('click', () => {
         const numGroups = parseInt(numGroupsInput.value);
         if (isNaN(numGroups) || numGroups < 1) return alert('Enter a valid number of groups.');
@@ -22,13 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
         groupStartsInput.value = starts.join(', ');
     });
 
-    // Generate flag assignments (unchanged, but now starts are sorted)
+    // Generate flag assignments (groups sorted by starting hole, CTP holes sorted ascending)
     generateBtn.addEventListener('click', () => {
         const startsInput = groupStartsInput.value.trim();
         let groupStarts = startsInput.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
         if (groupStarts.length === 0) return alert('Enter or generate starting holes.');
 
-        // Sort starting holes ascending for output
+        // Sort starting holes ascending for clean output
         groupStarts.sort((a, b) => a - b);
 
         const ctpInput = document.getElementById('ctp-holes').value.trim();
@@ -54,20 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
         outputSection.style.display = 'block';
     });
 
-    // New function: Suggest starting holes with min separation
+    // Suggest starting holes: prioritize preferred order, enforce separation
     function suggestStartingHoles(numGroups) {
         let starts = [];
         let used = new Set();
 
-        // Prefer TD on 21 if available
-        if (preferredHoles.includes(21)) {
-            starts.push(21);
-            used.add(21);
-        }
-
-        // Try preferred holes next, respecting separation
-        for (let hole of preferredHoles) {
+        // Add preferred holes in your desired sequence, if they fit separation
+        for (let hole of preferredOrder) {
+            if (starts.length >= numGroups) break;
             if (used.has(hole)) continue;
+
             let valid = true;
             for (let u of used) {
                 let dist = Math.min(Math.abs(hole - u), totalHoles - Math.abs(hole - u));
@@ -76,16 +72,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 }
             }
+
             if (valid) {
                 starts.push(hole);
                 used.add(hole);
-                if (starts.length === numGroups) return starts.sort((a, b) => a - b);
             }
         }
 
-        // Fill remaining with any hole that satisfies separation
+        // Fill remaining slots with any hole that satisfies separation
         for (let hole = 1; hole <= totalHoles; hole++) {
+            if (starts.length >= numGroups) break;
             if (used.has(hole)) continue;
+
             let valid = true;
             for (let u of used) {
                 let dist = Math.min(Math.abs(hole - u), totalHoles - Math.abs(hole - u));
@@ -94,17 +92,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 }
             }
+
             if (valid) {
                 starts.push(hole);
                 used.add(hole);
-                if (starts.length === numGroups) break;
             }
         }
 
+        // Final sort ascending for display
         return starts.sort((a, b) => a - b);
     }
 
-    // Flag calculation (unchanged)
+    // Flag assignment calculation (unchanged)
     function calculateFlagAssignments(groupStarts, ctpHoles) {
         const bringOut = {};
         const pickUp = {};
