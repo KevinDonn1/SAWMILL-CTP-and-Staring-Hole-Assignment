@@ -5,11 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateBtn = document.getElementById('generate-btn');
     const outputSection = document.getElementById('output');
     const ctpFlagsDiv = document.getElementById('ctp-flags');
-    const totalHoles = 24; // Sawmill fixed at 24
+    const totalHoles = 24;
 
     const preferredHoles = [21, 1, 12, 23, 19, 10, 11, 13]; // TD on 21 first
 
-    // Generate suggested starting holes based on # of groups
+    // Generate suggested starting holes
     generateStartsBtn.addEventListener('click', () => {
         const numGroups = parseInt(numGroupsInput.value);
         if (isNaN(numGroups) || numGroups < 1) return alert('Enter a valid number of groups.');
@@ -18,32 +18,39 @@ document.addEventListener('DOMContentLoaded', () => {
         groupStartsInput.value = assigned.join(', ');
     });
 
-    // Generate flag assignments
+    // Generate flag assignments with sorted groups and sorted holes
     generateBtn.addEventListener('click', () => {
         const startsInput = groupStartsInput.value.trim();
-        const groupStarts = startsInput.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        let groupStarts = startsInput.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
         if (groupStarts.length === 0) return alert('Enter or generate starting holes.');
+
+        // Sort starting holes ascending (lowest first)
+        const sortedStarts = [...groupStarts].sort((a, b) => a - b);
 
         const ctpInput = document.getElementById('ctp-holes').value.trim();
         const ctpHoles = ctpInput.split(',').map(h => parseInt(h.trim())).filter(n => !isNaN(n));
         if (ctpHoles.length === 0) return alert('Enter CTP holes.');
 
+        // Calculate assignments using original (unsorted) starts
         const { bringOut, pickUp } = calculateFlagAssignments(groupStarts, ctpHoles);
 
+        // Re-map assignments to sorted order
         let html = '';
-        for (let g = 1; g <= groupStarts.length; g++) {
-            // Sort holes ascending before displaying
-            const takeOutSorted = (bringOut[g] || []).sort((a, b) => a - b).join(', ') || 'None';
-            const pickUpSorted   = (pickUp[g]   || []).sort((a, b) => a - b).join(', ') || 'None';
+        sortedStarts.forEach((startHole, sortedIndex) => {
+            // Find original group index that had this start hole
+            const originalGroupIndex = groupStarts.indexOf(startHole) + 1;
+
+            const takeOutSorted = (bringOut[originalGroupIndex] || []).sort((a, b) => a - b).join(', ') || 'None';
+            const pickUpSorted   = (pickUp[originalGroupIndex]   || []).sort((a, b) => a - b).join(', ') || 'None';
 
             html += `
-                <h4>Group ${g} (starts on hole ${groupStarts[g-1]})</h4>
+                <h4>Group ${sortedIndex + 1} (starts on hole ${startHole})</h4>
                 <p>Take out CTP flags: ${takeOutSorted}</p>
                 <p>Pick Up: ${pickUpSorted}</p>
             `;
-        }
-        ctpFlagsDiv.innerHTML = html;
+        });
 
+        ctpFlagsDiv.innerHTML = html;
         outputSection.style.display = 'block';
     });
 
